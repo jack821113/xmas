@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聖誕 Bingo 抽號機</title>
+    <style>
+        /* 頁面背景樣式 - 深森林綠色 */
+        body {
+            font-family: "Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", "Helvetica Neue", Arial, sans-serif; 
+            color: #fdf9e9; /* 主文字顏色為米白色 */
+            padding: 0;
+            margin: 0;
+            
+            background-color: #1b5e20; /* 深森林綠色 (Deep Forest Green) */
+            background-image: 
+                repeating-linear-gradient(-45deg, 
+                    rgba(0,0,0,.1) 0px, 
+                    rgba(0,0,0,.1) 1px, 
+                    transparent 1px, 
+                    transparent 20px); 
+            background-size: 20px 20px; 
+            background-attachment: fixed;
+        }
+
+        .main-wrapper {
+            max-width: 950px; 
+            margin: 30px auto; 
+            display: flex;
+            gap: 20px; 
+            padding: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 圖片容器樣式 */
+        #logo-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #logo {
+            max-width: 100%;
+            height: auto;
+            max-height: 150px; 
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 面板基底樣式 - 深酒紅色 */
+        .left-panel, .right-panel {
+            flex: 1; 
+            background: #8b0000; /* 深酒紅色/深勃艮第紅 (Dark Red) */
+            color: #fdf9e9; /* 面板文字顏色為米白色 */
+            border-radius: 15px; 
+            padding: 30px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 4px solid #f1c40f; /* 金色邊框 */
+        }
+
+        .left-panel {
+            text-align: center;
+        }
+
+        /* h1 標題樣式 */
+        h1 {
+            color: #fdf9e9; /* 米白色 */
+            font-size: 2.2em; 
+            margin: 10px 0 20px 0; 
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); 
+            border: none; 
+            display: block; 
+        }
+        
+        /* 二級標題 (已抽出號碼) 顏色 */
+        .right-panel h2 {
+            color: #f1c40f; /* 金色 */
+            font-size: 2em;
+            margin-top: 0;
+        }
+
+        /* 抽號區 (最新號碼顯示區塊) */
+        #current-call {
+            background-color: #f39c12; /* 聖誕金色/橘色 */
+            color: white;
+            padding: 20px; 
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 1.2em;
+            border: 3px solid #e67e22; 
+            font-weight: bold; 
+        }
+
+        #latest-number {
+            /* 號碼球樣式 - 放大 */
+            font-size: 5em; 
+            font-weight: 900; 
+            display: block;
+            margin-top: 10px;
+            
+            width: 120px; 
+            height: 120px; 
+            line-height: 120px; 
+            border-radius: 50%;
+            
+            background-color: #ecf0f1; 
+            color: #333; 
+            border: 4px solid #7f8c8d; 
+
+            margin: 10px auto; 
+            transform: scale(1);
+            transition: none; 
+            text-shadow: none; 
+        }
+
+        /* 號碼球顏色定義 */
+        .ball-b { background-color: #3498db !important; color: white !important; border-color: #2980b9 !important; } 
+        .ball-i { background-color: #e74c3c !important; color: white !important; border-color: #c0392b !important; } 
+        .ball-n { background-color: #f1c40f !important; color: #2c3e50 !important; border-color: #f39c12 !important; } 
+        .ball-g { background-color: #2ecc71 !important; color: white !important; border-color: #27ae60 !important; } 
+        .ball-o { background-color: #9b59b6 !important; color: white !important; border-color: #8e44ad !important; } 
+
+
+        /* === 滾球動畫定義 === */
+        @keyframes rolling-bounce {
+            0% { transform: translateX(-200px) rotate(-180deg) scale(0.5); opacity: 0; }
+            80% { transform: translateX(0px) rotate(720deg) scale(1.1); opacity: 1; }
+            90% { transform: translateX(-5px) scale(1.05); } 
+            100% { transform: translateX(0px) rotate(720deg) scale(1); opacity: 1; }
+        }
+
+        .rotating {
+            animation: rolling-bounce 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; 
+        }
+        /* ======================== */
+
+
+        /* 按鈕 - 聖誕綠色，金色陰影 */
+        button {
+            background-color: #27ae60; /* 聖誕綠色 */
+            color: white;
+            padding: 15px 30px; 
+            font-size: 1.1em; 
+            border-radius: 40px; 
+            box-shadow: 0 5px #f1c40f; /* 金色陰影 */
+            margin-bottom: 20px;
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #2ecc71; 
+            transform: scale(1.03); 
+        }
+        
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px #f1c40f;
+        }
+
+        /* 已抽出號碼清單中的號碼球樣式 */
+        .number-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px; 
+            padding: 8px;
+            max-height: 60vh; 
+            overflow-y: auto;
+            border: 2px dashed #f1c40f; /* 金色虛線邊框 */
+            border-radius: 10px;
+            justify-content: flex-start; 
+        }
+        
+        /* 清單中的圓形號碼樣式 */
+        .number-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px; 
+            height: 40px;
+            border-radius: 50%; 
+            font-weight: 900; 
+            font-size: 1em; 
+        }
+        
+        /* 特殊樣式：最新抽出號碼 */
+        .latest-list-item {
+             transform: scale(1.1); 
+             animation: flash 0.5s ease-out 3; 
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="main-wrapper">
+        
+        <div class="left-panel">
+            <div id="logo-container">
+                <img id="logo" 
+                     src="https://ppt.cc/fkKMYx@.png" 
+                     alt="活動 Logo - Christmas Party">
+            </div>
+
+            <h1>聖誕 Bingo 抽號機</h1>
+            
+            <button id="call-button">🔔 抽取下一個號碼</button>
+            
+            <div id="current-call">
+                **最新的號碼**
+                <span id="latest-number">---</span>
+            </div>
+        </div>
+
+        <div class="right-panel" id="called-numbers-display">
+            <h2>已抽出號碼 (依抽出順序)</h2>
+            <div id="number-list-container" class="number-list">
+                <p style="text-align: center; width: 100%; color:#fdf9e9;">尚未抽出任何號碼。</p>
+            </div>
+        </div>
+        
+    </div>
+
+    <audio id="draw-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-fast-bubble-pop-1120.mp3" type="audio/mp3">
+    </audio>
+
+    <audio id="call-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-complete-2055.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        // JS 邏輯區
+        const allNumbers = Array.from({ length: 75 }, (_, i) => i + 1); 
+        let availableNumbers = [...allNumbers];
+        let calledNumbers = []; 
+        let latestCalled = null;
+
+        const latestNumberDisplay = document.getElementById('latest-number');
+        const callButton = document.getElementById('call-button');
+        const numberListContainer = document.getElementById('number-list-container'); 
+
+        // === 音頻元素 ===
+        const drawSound = document.getElementById('draw-sound');
+        const callSound = document.getElementById('call-sound');
+
+        drawSound.volume = 0.5;
+        callSound.volume = 0.7;
+        
+        function initAudio() {
+            const attemptPlay = (audio) => {
+                audio.muted = true; 
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.muted = false; 
+                    audio.currentTime = 0;
+                }).catch(error => {
+                    console.log('音頻初始化失敗，可能需要用戶互動:', error);
+                });
+            };
+
+            attemptPlay(drawSound);
+            attemptPlay(callSound);
+        }
+
+        function getBallClass(num) {
+            if (num >= 1 && num <= 15) return 'ball-b'; 
+            if (num >= 16 && num <= 30) return 'ball-i'; 
+            if (num >= 31 && num <= 45) return 'ball-n'; 
+            if (num >= 46 && num <= 60) return 'ball-g'; 
+            if (num >= 61 && num <= 75) return 'ball-o'; 
+            return '';
+        }
+        
+        function drawCalledNumbersList() {
+            numberListContainer.innerHTML = '';
+            
+            if (calledNumbers.length === 0) {
+                 numberListContainer.innerHTML = '<p style="text-align: center; width: 100%; color:#fdf9e9;">尚未抽出任何號碼。</p>';
+                 return;
+            }
+
+            document.querySelectorAll('.latest-list-item').forEach(el => {
+                el.classList.remove('latest-list-item');
+                el.style.animation = '';
+            });
+
+            calledNumbers.forEach(num => {
+                const itemSpan = document.createElement('span');
+                itemSpan.className = `number-item ${getBallClass(num)}`; 
+                itemSpan.textContent = num; 
+                
+                if (num === latestCalled) {
+                    itemSpan.classList.add('latest-list-item');
+                }
+                
+                numberListContainer.appendChild(itemSpan);
+            });
+            
+            if (latestCalled) {
+                const latestItem = numberListContainer.querySelector('.latest-list-item');
+                if (latestItem) {
+                    setTimeout(() => {
+                        latestItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 50); 
+                }
+            }
+        }
+
+        function callNextNumber() {
+            if (availableNumbers.length === 0) {
+                latestNumberDisplay.textContent = '結束';
+                latestNumberDisplay.className = '';
+                callButton.disabled = true;
+                return;
+            }
+
+            callButton.disabled = true;
+            latestNumberDisplay.textContent = '...'; 
+            latestNumberDisplay.className = ''; 
+
+            drawSound.currentTime = 0;
+            drawSound.play().catch(error => {
+                console.error("無法播放抽取音效:", error);
+            });
+
+            const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+            const newNumber = availableNumbers.splice(randomIndex, 1)[0];
+
+            calledNumbers.push(newNumber); 
+            latestCalled = newNumber;
+            const ballClass = getBallClass(newNumber);
+
+            setTimeout(() => {
+                latestNumberDisplay.classList.add(ballClass); 
+                latestNumberDisplay.textContent = newNumber; 
+                latestNumberDisplay.classList.add('rotating'); 
+                
+                callSound.currentTime = 0;
+                callSound.play().catch(error => {
+                    console.error("無法播放報號音效:", error);
+                });
+
+            }, 500); 
+
+            setTimeout(() => {
+                latestNumberDisplay.classList.remove('rotating'); 
+                callButton.disabled = false; 
+                
+                drawCalledNumbersList();
+            }, 2000); 
+        }
+
+        function initBingoMachine() {
+            initAudio(); 
+            drawCalledNumbersList(); 
+            callButton.addEventListener('click', callNextNumber); 
+        }
+
+        initBingoMachine();
+    </script>
+</body>
+</html>
